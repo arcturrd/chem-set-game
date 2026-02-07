@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Хім-Сет: Онлайн Гра</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Roboto:wght@400;700;900&display=swap');
+
+        :root { 
+            --card-width: 140px; 
+            --card-height: 250px; 
+            --bg-main: #ebf0f5; 
+            --brand-blue: #193a6f;
+            --brand-dark: #2c3e50;
+        }
+
+        body { 
+            margin: 0; 
+            background: var(--bg-main); 
+            font-family: 'Roboto', sans-serif; 
+            height: 100vh; 
+            height: 100dvh;
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* SCREENS */
+        .screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: absolute; top:0; left:0; background: #f0f2f5; }
+        
+        #lobby-screen { 
+            background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-dark) 100%); 
+            color: white; 
+            z-index: 10; 
+            padding: 20px; 
+            box-sizing: border-box; 
+        }
+        
+        .lobby-box { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            text-align: center; 
+            color: #333; 
+            width: 100%; 
+            max-width: 350px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: 'Oswald'; text-transform: uppercase; }
+        .btn-create { background: #27ae60; color: white; }
+        .btn-join { background: var(--brand-blue); color: white; }
+        .btn-create:disabled, .btn-join:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* GAME LAYOUT */
+        #game-interface { display: none; width: 100%; height: 100%; }
+        
+        #waiting-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 20px; }
+        
+        #active-game-board { 
+            display: none; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .room-badge {
+            position: absolute;
+            top: 10px; left: 10px;
+            background: rgba(25, 58, 111, 0.9);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'Oswald';
+            z-index: 20;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            pointer-events: auto; cursor: pointer;
+        }
+        
+        #room-code-display { cursor: pointer; text-decoration: underline; }
+
+        /* TOP */
+        #top-bar {
+            flex-shrink: 0; padding: 10px; padding-top: 45px;
+            background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; gap: 10px; z-index: 5;
+        }
+
+        #opponents { 
+            display: flex; gap: 10px; overflow-x: auto; padding: 5px 0;
+            scrollbar-width: none;
+        }
+        #opponents::-webkit-scrollbar { display: none; }
+
+        .opponent { 
+            background: #f8f9fa; padding: 5px 10px; border-radius: 10px; 
+            text-align: center; border: 1px solid #ddd; min-width: 90px; 
+            flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+        }
+        .opponent.active { border-color: #e74c3c; background: #fff5f5; }
+        .opp-name { font-weight: bold; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+        .mini-card { width: 8px; height: 12px; background: var(--brand-blue); border-radius: 2px; display: inline-block; margin: 0 1px; }
+
+        .sets-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin-top: 4px; max-width: 90px; }
+        .set-badge { font-size: 9px; color: white; padding: 1px 4px; border-radius: 4px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+        /* MIDDLE */
+        #center-area { 
+            flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 20px; padding: 10px; position: relative;
+        }
+        
+        #deck-pile { 
+            width: 70px; height: 100px; background: var(--brand-blue); border: 3px solid white; border-radius: 8px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+        }
+        
+        #game-log { 
+            font-size: 12px; color: #333; width: 220px; text-align: left;
+            background: rgba(255,255,255,0.7); padding: 10px; border-radius: 8px;
+            height: 120px; overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 2px; line-height: 1.3; flex-shrink: 0; }
+
+        /* BOTTOM */
+        #player-area { 
+            flex-shrink: 0; background: white; padding: 0 0 10px 0; padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10;
+        }
+
+        .player-status {
+            display: flex; justify-content: space-between; padding: 5px 15px; font-weight: bold; font-size: 14px;
+            background: #f9f9f9; border-bottom: 1px solid #eee; color: var(--brand-dark);
+        }
+
+        #my-sets-list { padding: 5px 15px; display: none; white-space: nowrap; overflow-x: auto; border-bottom: 1px dashed #eee; }
+        #my-sets-list .set-badge { font-size: 11px; padding: 2px 6px; margin-right: 5px; }
+
+        #my-hand { 
+            display: flex; overflow-x: auto; padding: 40px 20px 10px 20px; min-height: 290px;
+            align-items: flex-end; gap: -10px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+            width: fit-content; max-width: 100%; margin: 0 auto;
+        }
+        
+        /* CARDS */
+        .card { 
+            width: var(--card-width); height: var(--card-height); background: #fff; 
+            border: 1px solid #2c3e50; border-radius: 8px; display: flex; flex-direction: column; 
+            position: relative; flex-shrink: 0; margin-right: -40px; 
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.27); 
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1); transform-origin: center bottom; scroll-snap-align: start;
+        }
+        .card:last-child { margin-right: 20px; }
+
+        @media (max-width: 600px) {
+            :root { --card-width: 110px; --card-height: 190px; }
+            #my-hand { min-height: 230px; padding-top: 35px; }
+            .card.focused { transform: translateY(-30px) scale(1.1); z-index: 100; margin-right: 10px; margin-left: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+            .footer-info { font-size: 8px; line-height: 1.1; }
+            .sym-display { font-size: 32px; }
+            .name-display { font-size: 10px; }
+        }
+
+        @media (min-width: 601px) {
+            .card:hover { transform: translateY(-30px); z-index: 100; margin-right: 0; }
+        }
+        
+        .family-header { background: linear-gradient(135deg, var(--accent-color), #2c3e50); color: white; padding: 2px; font-family: 'Oswald'; font-size: 10px; text-transform: uppercase; text-align: center; }
+        .block-tag { position: absolute; top: 30px; left: 4px; font-family: 'Oswald'; font-size: 12px; color: var(--accent-color); font-weight: bold; }
+        .family-icon { position: absolute; top: 30px; right: 4px; width: 14px; fill: var(--accent-color); }
+        .element-box { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #fff 15%, var(--bg-color) 100%); }
+        .sym-display { font-family: 'Oswald'; font-size: 34px; font-weight: bold; color: #1a252f; line-height: 1; }
+        .name-display { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 2px; text-align: center; }
+        .footer-info { height: 65px; padding: 3px; font-size: 8px; border-top: 2px solid var(--accent-color); overflow: hidden; background: white; border-radius: 0 0 6px 6px; }
+        ul { padding: 0; margin: 0; list-style: none; padding-left: 2px; }
+        ul li { margin-bottom: 1px; display: flex; gap: 4px; }
+
+        /* MODALS */
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:2000; opacity: 0; transition: opacity 0.3s; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background:white; padding:25px; border-radius:15px; width:90%; max-width:400px; text-align:center; transition: transform 0.3s; }
+        
+        @media (max-width: 600px) {
+            .modal { align-items: flex-end; }
+            .modal-content { width: 100%; max-width: 100%; border-radius: 20px 20px 0 0; padding: 30px 20px 50px 20px; transform: translateY(100%); }
+            .modal.active .modal-content { transform: translateY(0); }
+        }
+
+        .selection-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height: 30vh; overflow-y:auto; }
+        .select-item { padding:12px; background:#f9f9f9; border:2px solid #eee; border-radius:10px; cursor:pointer; font-weight: bold; }
+        .select-item.selected { background:var(--brand-blue); color:white; border-color:var(--brand-blue); }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOADING -->
+    <div id="loading-screen" class="screen" style="z-index: 5000; background: #193a6f; color: white;">
+        <h1 style="font-family:'Oswald'">ЗАВАНТАЖЕННЯ...</h1>
+    </div>
+
+    <!-- LOBBY -->
+    <div id="lobby-screen" class="screen">
+        <h1 style="font-family:'Oswald'; font-size: 50px; margin-bottom: 10px;">ХІМ-СЕТ</h1>
+        <div class="lobby-box">
+            <input type="text" id="player-name" placeholder="Ваше ім'я" maxlength="10">
+            <button id="btn-create-room" class="btn-create" onclick="createRoom()">Створити Кімнату</button>
+            <div style="margin: 15px 0; font-size: 12px; opacity: 0.7;">АБО ПРИЄДНАТИСЬ</div>
+            <input type="text" id="room-code-input" placeholder="Код кімнати (напр. A1B2)" style="text-transform:uppercase">
+            <button id="btn-join-room" class="btn-join" onclick="joinRoom()">Увійти</button>
+        </div>
+    </div>
+
+    <!-- GAME INTERFACE -->
+    <div id="game-interface">
+        <div id="waiting-area">
+            <h2 style="font-family:'Oswald'; color: #193a6f;">КІМНАТА: <span id="room-code-display" style="color:#e74c3c; font-size: 40px;" onclick="copyRoomCode()"></span></h2>
+            <p>Поділіться кодом з друзями</p>
+            <div id="player-list" style="margin: 20px 0;"></div>
+            <button id="start-btn" class="btn-create" style="width: 200px; display:none;" onclick="startGame()">ПОЧАТИ ГРУ</button>
+            <button onclick="leaveRoom()" style="background:none; color:#888; margin-top:20px; width:auto;">Вийти</button>
+        </div>
+
+        <div id="active-game-board">
+            <div class="room-badge" onclick="copyRoomCode()">Кімната: <span id="active-room-code"></span> 📋</div>
+            <div id="top-bar"><div id="opponents"></div></div>
+            <div id="center-area">
+                <div id="deck-pile">
+                    <div style="font-family:'Oswald'; line-height:1; font-size:14px; text-align:center; opacity:0.8; color:white">ХІМ<br>СЕТ</div>
+                    <span id="deck-count" style="margin-top:5px; font-weight:bold; color:white">0</span>
+                </div>
+                <div>
+                    <div style="font-size:10px; font-weight:bold; color:#7f8c8d; margin-bottom:5px">ОСТАННІ ПОДІЇ:</div>
+                    <div id="game-log"></div>
+                </div>
+            </div>
+            <div id="player-area">
+                <div class="player-status">
+                    <span id="status-text">Очікування...</span>
+                    <span>Мої сети: <span id="my-sets-count" style="color:#8e44ad">0</span></span>
+                </div>
+                <div id="my-sets-list"></div>
+                <div id="my-hand"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION MODAL -->
+    <div id="action-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="margin:0 0 10px 0; font-family:'Oswald'"></h3>
+            <p id="modal-desc" style="font-size:14px; color:#555"></p>
+            <div id="modal-grid" class="selection-grid"></div>
+            <button id="modal-confirm" class="btn-create" disabled>Далі</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#888; cursor:pointer; margin-top:15px; width:100%">Скасувати</button>
+        </div>
+    </div>
+
+    <!-- WIN SCREEN -->
+    <div id="win-screen" class="modal" style="background:rgba(25, 58, 111, 0.95); display:none !important">
+        <div class="modal-content">
+            <h1 style="font-family:'Oswald'; color:#27ae60">ПЕРЕМОГА!</h1>
+            <h2 id="winner-name" style="color:#333"></h2>
+            <div id="final-stats" style="text-align:left; margin:20px 0;"></div>
+            <button onclick="leaveRoom()" class="btn-join">В меню</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+        // --- КОНФІГУРАЦІЯ ---
+        // 1. Для GitHub/Хостингу: Замініть об'єкт нижче на ваш Firebase Config
+        let firebaseConfig = {
+            apiKey: "AIzaSyDZXEmgvmny095Db3ntE9_mXbeXmkCvhI8",
+            authDomain: "chem-set-game.firebaseapp.com",
+            projectId: "chem-set-game",
+            storageBucket: "chem-set-game.firebasestorage.app",
+            messagingSenderId: "590001642975",
+            appId: "1:590001642975:web:676e2fafad7fcc8be6786a"
+            
+        };
+
+        // 2. Для Попереднього перегляду (Тут): Автоматичне налаштування
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        }
+
+        let app, auth, db;
+        let appId = 'chem-set-default';
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            if (typeof __app_id !== 'undefined') {
+                appId = __app_id;
+            }
+        } catch (e) {
+            console.error("Помилка ініціалізації Firebase.", e);
+        }
+
+        let currentUser = null;
+        let currentRoomId = null;
+        let unsubscribeRoom = null;
+        let gameData = null;
+
+        // ASSETS
+        const icons = {
+            alkali: `<svg viewBox="0 0 24 24"><path d="M13 10V2L5.67 11H11V22L18.33 13H13Z"/></svg>`,
+            earth: `<svg viewBox="0 0 24 24"><path d="M19,6V5A2,2 0 0,0 17,3H15A2,2 0 0,0 13,5V6H11V5A2,2 0 0,0 9,3H7A2,2 0 0,0 5,5V6H3V20H21V6H19M15,5H17V6H15V5M7,5H9V6H7V5M19,18H5V16H19V18M19,14H5V12H19V14Z"/></svg>`,
+            pnict: `<svg viewBox="0 0 24 24"><path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,11 17,8 17,8Z"/></svg>`,
+            chalc: `<svg viewBox="0 0 24 24"><path d="M17.66,11.2C17.43,10.9 17.15,10.64 16.89,10.38C16.22,9.7 15.46,9.03 15.46,7.82C15.46,6.74 15.94,5.83 16.67,5.13C15.55,4.96 14.12,5.39 13.34,6.34C11.72,8.31 11.72,10.79 13.59,12.77C13.94,13.15 14.04,13.73 13.87,14.22C13.68,14.73 13.3,15.11 12.79,15.3C12.1,15.57 11.33,15.46 10.75,15.04C9.56,14.17 9.11,12.63 9.64,11.22C9.83,10.73 9.77,10.2 9.47,9.76C9.17,9.33 8.68,9.05 8.17,9.03C7.2,9 6.22,9.46 5.5,10.19C3.97,11.73 3.5,14.06 4.35,16.05C5.19,18.04 7.15,19.34 9.3,19.34C10.7,19.34 12.06,18.88 13.17,18.03C14.1,17.32 14.75,16.39 15.1,15.36C15.26,14.88 15.5,14.45 15.86,14.1C17.62,12.42 17.62,11.2 17.66,11.2Z"/></svg>`,
+            halo: `<svg viewBox="0 0 24 24"><path d="M12,2L1,21H23L12,2M12,6L19.53,19H4.47L12,6M11,10V14H13V10H11M11,16V18H13V16H11Z"/></svg>`,
+            inert: `<svg viewBox="0 0 24 24"><path d="M12,6A5,5 0 0,1 17,11C17,13.28 15.46,15.19 13.41,15.72C13.88,16.29 14.24,16.94 14.44,17.66C15.95,17.32 17.35,16.54 18.45,15.4C20.3,13.53 21.25,11.05 21.25,8.31C21.25,5.57 20.3,3.09 18.45,1.22C16.58,-0.65 14.1,-1.6 11.37,-1.6C8.64,-1.6 6.16,-0.65 4.29,1.22C2.44,3.09 1.49,5.57 1.49,8.31C1.49,11.05 2.44,13.53 4.29,15.4C5.39,16.54 6.79,17.32 8.3,17.66C8.5,16.94 8.86,16.29 9.33,15.72C7.28,15.19 5.74,13.28 5.74,11A5,5 0 0,1 10.74,6H12M12,18A1,1 0 0,1 13,19A1,1 0 0,1 12,20A1,1 0 0,1 11,19A1,1 0 0,1 12,18Z"/></svg>`,
+            d_block: `<svg viewBox="0 0 24 24"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,11.14L5,8.25V12.14C5,15.89 7.99,19.27 12,20.92C16.01,19.27 19,15.89 19,12.14V8.25L12,11.14Z"/></svg>`,
+            crystallogen: `<svg viewBox="0 0 24 24"><path d="M12,2L15.5,8.5H8.5L12,2M17.5,10L21,17H15.5L12,10H17.5M6.5,10L10,17H3L6.5,10M12,19L15.5,25H8.5L12,19Z" transform="scale(0.8) translate(3,3)"/></svg>`,
+            icosagen: `<svg viewBox="0 0 24 24"><path d="M12,2L22,12L12,22L2,12L12,2M12,4.83L4.83,12L12,19.17L19.17,12L12,4.83Z"/></svg>`
+        };
+
+        const families = [
+            { block: 's', group: "Лужні метали", color: "#e74c3c", bg: "#f9d5d3", icon: icons.alkali, members: [{s:"Li", n:"Літій"}, {s:"Na", n:"Натрій"}, {s:"K", n:"Калій"}, {s:"Rb", n:"Рубідій"}, {s:"Cs", n:"Цезій"}] },
+            { block: 's', group: "Лужноземельні", color: "#16a085", bg: "#d1ede8", icon: icons.earth, members: [{s:"Be", n:"Берилій"}, {s:"Mg", n:"Магній"}, {s:"Ca", n:"Кальцій"}, {s:"Sr", n:"Стронцій"}, {s:"Ba", n:"Барій"}] },
+            { block: 'p', group: "Ікосагени", color: "#00acc1", bg: "#e0f7fa", icon: icons.icosagen, members: [{s:"B", n:"Бор"}, {s:"Al", n:"Алюміній"}, {s:"Ga", n:"Галій"}, {s:"In", n:"Індій"}, {s:"Tl", n:"Талій"}] },
+            { block: 'p', group: "Кристалогени", color: "#212121", bg: "#f5f5f5", icon: icons.crystallogen, members: [{s:"C", n:"Карбон"}, {s:"Si", n:"Силіцій"}, {s:"Ge", n:"Германій"}, {s:"Sn", n:"Станум"}, {s:"Pb", n:"Плюмбум"}] },
+            { block: 'p', group: "Пніктогени", color: "#2980b9", bg: "#d4eaf7", icon: icons.pnict, members: [{s:"N", n:"Нітроген"}, {s:"P", n:"Фосфор"}, {s:"As", n:"Арсен"}, {s:"Sb", n:"Стибій"}, {s:"Bi", n:"Вісмут"}] },
+            { block: 'p', group: "Халькогени", color: "#e67e22", bg: "#fde8cc", icon: icons.chalc, members: [{s:"O", n:"Оксиген"}, {s:"S", n:"Сульфур"}, {s:"Se", n:"Селен"}, {s:"Te", n:"Телур"}, {s:"Po", n:"Полоній"}] },
+            { block: 'p', group: "Галогени", color: "#27ae60", bg: "#d5f5e3", icon: icons.halo, members: [{s:"F", n:"Флуор"}, {s:"Cl", n:"Хлор"}, {s:"Br", n:"Бром"}, {s:"I", n:"Йод"}, {s:"At", n:"Астат"}] },
+            { block: 'p', group: "Інертні гази", color: "#8e44ad", bg: "#ebdef0", icon: icons.inert, members: [{s:"He", n:"Гелій"}, {s:"Ne", n:"Неон"}, {s:"Ar", n:"Аргон"}, {s:"Kr", n:"Криптон"}, {s:"Xe", n:"Ксенон"}] },
+            { block: 'd', group: "Благородні", color: "#c19a1a", bg: "#fff9e6", icon: icons.d_block, members: [{s:"Au", n:"Аурум"}, {s:"Ag", n:"Аргентум"}, {s:"Pt", n:"Платина"}, {s:"Pd", n:"Паладій"}, {s:"Ir", n:"Іридій"}] },
+            { block: 'd', group: "Сталеві метали", color: "#3f51b5", bg: "#e8eaf6", icon: icons.d_block, members: [{s:"Fe", n:"Ферум"}, {s:"Cr", n:"Хром"}, {s:"Mn", n:"Манган"}, {s:"Ni", n:"Нікель"}, {s:"V", n:"Ванадій"}] },
+            { block: 'd', group: "Вогнетривкі", color: "#6d4c41", bg: "#efeae8", icon: icons.d_block, members: [{s:"W", n:"Вольфрам"}, {s:"Mo", n:"Молібден"}, {s:"Ta", n:"Тантал"}, {s:"Zr", n:"Цирконій"}, {s:"Ti", n:"Титан"}] },
+            { block: 'd', group: "Технічні метали", color: "#546e7a", bg: "#eceff1", icon: icons.d_block, members: [{s:"Cu", n:"Купрум"}, {s:"Zn", n:"Цинк"}, {s:"Co", n:"Кобальт"}, {s:"Cd", n:"Кадмій"}, {s:"Hg", n:"Меркурій"}] }
+        ];
+
+        // INIT AUTH
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                // Лише попереджаємо, якщо це не режим заповнювача
+                if (!firebaseConfig.apiKey.includes("ВСТАВТЕ_СЮДИ")) {
+                    alert("Помилка авторизації: " + error.message);
+                }
+            }
+        };
+        
+        if (auth) {
+            initAuth();
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('lobby-screen').style.display = 'flex';
+                }
+            });
+        }
+
+        // --- GLOBAL FUNCTIONS ---
+        window.getFamilyColor = (name) => {
+            const fam = families.find(f => f.group === name);
+            return fam ? fam.color : '#7f8c8d';
+        };
+
+        window.copyRoomCode = () => {
+            if(!currentRoomId) return;
+            navigator.clipboard.writeText(currentRoomId).then(() => {
+                alert("Код скопійовано: " + currentRoomId);
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        };
+
+        // ... existing functions (createRoom, joinRoom, startGame, etc.) ...
+        
+        window.createRoom = async () => {
+            if (!currentUser) return alert("Зачекайте авторизації.");
+            const btn = document.getElementById('btn-create-room');
+            btn.disabled = true;
+            btn.innerText = "Створення...";
+
+            try {
+                const name = document.getElementById('player-name').value.trim() || "Гравець";
+                const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                // Check if using environment appId or default for path
+                const collectionPath = appId === 'chem-set-default' ? 
+                                     collection(db, 'rooms') : 
+                                     collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
+                
+                // Construct doc reference manually depending on path structure needed
+                // For this hybrid solution, let's use a helper for room Ref
+                const roomRef = getRoomRef(roomCode);
+
+                const initialData = {
+                    status: 'waiting',
+                    hostId: currentUser.uid,
+                    players: [{ uid: currentUser.uid, name: name, hand: [], sets: [], ready: true }],
+                    deck: [],
+                    turnIndex: 0,
+                    logs: ["Кімнату створено!"],
+                    lastAction: Date.now()
+                };
+                await setDoc(roomRef, initialData);
+                joinRoomLogic(roomCode);
+            } catch (error) {
+                console.error(error);
+                alert("Помилка створення кімнати: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "Створити Кімнату";
+            }
+        };
+
+        // Helper to switch between simple path (Github/Host) and Artifact path (Canvas)
+        function getRoomRef(code) {
+             if (appId === 'chem-set-default') {
+                 return doc(db, 'rooms', code);
+             } else {
+                 return doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+             }
+        }
+
+        window.joinRoom = async () => {
+            if (!currentUser) return alert("Зачекайте авторизації.");
+            const btn = document.getElementById('btn-join-room');
+            const codeInput = document.getElementById('room-code-input');
+            const name = document.getElementById('player-name').value.trim() || "Гість";
+            const code = codeInput.value.trim().toUpperCase();
+
+            if(!code) return alert("Введіть код!");
+
+            btn.disabled = true;
+            btn.innerText = "Вхід...";
+
+            try {
+                const roomRef = getRoomRef(code);
+                const snap = await getDoc(roomRef);
+                
+                if (!snap.exists()) throw new Error("Кімнату не знайдено!");
+                
+                const data = snap.data();
+                if (data.status !== 'waiting' && !data.players.find(p => p.uid === currentUser.uid)) {
+                    throw new Error("Гра вже почалась або кімната закрита!");
+                }
+
+                if (!data.players.find(p => p.uid === currentUser.uid)) {
+                    if(data.players.length >= 4) throw new Error("Кімната повна!");
+                    const newPlayer = { uid: currentUser.uid, name: name, hand: [], sets: [], ready: true };
+                    const newPlayers = [...data.players, newPlayer];
+                    await updateDoc(roomRef, { players: newPlayers });
+                }
+                joinRoomLogic(code);
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+                btn.disabled = false;
+                btn.innerText = "Увійти";
+            }
+        };
+
+        function joinRoomLogic(code) {
+            currentRoomId = code;
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('game-interface').style.display = 'block';
+            document.getElementById('room-code-display').innerText = code;
+            document.getElementById('active-room-code').innerText = code;
+            
+            const roomRef = getRoomRef(code);
+            unsubscribeRoom = onSnapshot(roomRef, (doc) => {
+                if(doc.exists()) { 
+                    gameData = doc.data(); 
+                    renderGame(); 
+                } else {
+                    alert("Кімнату було закрито.");
+                    window.leaveRoom();
+                }
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                alert("Помилка з'єднання (можливо, невірні налаштування Firebase Rules).");
+            });
+        }
+
+        window.startGame = async () => {
+            if (!gameData || gameData.hostId !== currentUser.uid) return;
+            try {
+                let newDeck = [];
+                families.forEach(f => f.members.forEach(m => newDeck.push({
+                    id: m.s, block: f.block, family: f.group, color: f.color, bg: f.bg, icon: f.icon,
+                    symbol: m.s, name: m.n, members: f.members
+                })));
+                newDeck.sort(() => Math.random() - 0.5);
+                const cardsPerPlayer = gameData.players.length === 2 ? 7 : 5;
+                const updatedPlayers = JSON.parse(JSON.stringify(gameData.players));
+                updatedPlayers.forEach(p => {
+                    p.hand = [];
+                    for(let i=0; i<cardsPerPlayer; i++) if(newDeck.length) p.hand.push(newDeck.pop());
+                    p.hand.sort((a,b) => (a.family > b.family) ? 1 : -1);
+                    checkSets(p);
+                });
+                await updateDoc(getRoomRef(currentRoomId), {
+                    status: 'playing', deck: newDeck, players: updatedPlayers,
+                    turnIndex: Math.floor(Math.random() * updatedPlayers.length), logs: ["Гра почалась!"]
+                });
+            } catch (e) {
+                alert("Помилка старту: " + e.message);
+            }
+        };
+
+        window.leaveRoom = () => { if(unsubscribeRoom) unsubscribeRoom(); location.reload(); };
+
+        function checkSets(playerObj) {
+            const counts = {};
+            playerObj.hand.forEach(c => counts[c.family] = (counts[c.family] || 0) + 1);
+            let setsFound = [];
+            for (let fam in counts) if (counts[fam] === 5) setsFound.push(fam);
+            if(setsFound.length > 0) {
+                setsFound.forEach(fam => {
+                    if(!playerObj.sets.includes(fam)) {
+                        playerObj.sets.push(fam);
+                        playerObj.hand = playerObj.hand.filter(c => c.family !== fam);
+                    }
+                });
+                return true;
+            }
+            return false;
+        }
+
+        let selectedFamily = null;
+        let selectedTargetUid = null;
+        let selectedCardSym = null;
+
+        window.openMoveModal = (family) => {
+            const myIndex = gameData.players.findIndex(p => p.uid === currentUser.uid);
+            if (gameData.status !== 'playing' || gameData.turnIndex !== myIndex) return alert("Чекайте свого ходу!");
+
+            selectedFamily = family;
+            document.getElementById('action-modal').classList.add('active');
+            setupStep1();
+        };
+
+        window.setupStep1 = () => {
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const grid = document.getElementById('modal-grid');
+            const btn = document.getElementById('modal-confirm');
+            title.innerText = `Сім'я: ${selectedFamily}`;
+            desc.innerText = "1. У кого запитати?";
+            grid.innerHTML = '';
+            gameData.players.forEach(p => {
+                if(p.uid !== currentUser.uid && p.hand.length > 0) {
+                    grid.innerHTML += `<div class="select-item" onclick="selectTarget('${p.uid}', this)">${p.name} (${p.hand.length})</div>`;
+                }
+            });
+            btn.disabled = true;
+            btn.onclick = () => setupStep2();
+        };
+
+        window.selectTarget = (uid, el) => {
+            selectedTargetUid = uid;
+            document.querySelectorAll('.select-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('modal-confirm').disabled = false;
+        };
+
+        window.setupStep2 = () => {
+            document.getElementById('modal-desc').innerText = "2. Яку карту хочете?";
+            const grid = document.getElementById('modal-grid');
+            grid.innerHTML = '';
+            const famData = families.find(f => f.group === selectedFamily);
+            const myPlayer = gameData.players.find(p => p.uid === currentUser.uid);
+            const myCards = myPlayer.hand.map(c => c.symbol);
+            famData.members.forEach(m => {
+                if (!myCards.includes(m.s)) {
+                    grid.innerHTML += `<div class="select-item" onclick="selectCardItem('${m.s}', this)"><b>${m.s}</b> ${m.n}</div>`;
+                }
+            });
+            const btn = document.getElementById('modal-confirm');
+            btn.innerText = "Запитати!";
+            btn.disabled = true;
+            btn.onclick = () => executeMove();
+        };
+
+        window.selectCardItem = (sym, el) => {
+            selectedCardSym = sym;
+            document.querySelectorAll('.select-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('modal-confirm').disabled = false;
+        };
+
+        window.closeModal = () => { document.getElementById('action-modal').classList.remove('active'); };
+
+        window.drawFromDeck = async () => {
+            try {
+                const roomRef = getRoomRef(currentRoomId);
+                const snap = await getDoc(roomRef);
+                const freshData = snap.data();
+                if (freshData.deck.length === 0) return alert("Колода пуста!");
+                
+                const players = freshData.players;
+                const sourceIdx = players.findIndex(p => p.uid === currentUser.uid);
+                const source = players[sourceIdx];
+
+                const newCard = freshData.deck.pop();
+                source.hand.push(newCard);
+                source.hand.sort((a,b) => (a.family > b.family) ? 1 : -1);
+                
+                let logMsg = `${source.name} не мав карт і взяв одну з колоди.`;
+                if(checkSets(source)) logMsg += ` <span style="color:#f1c40f">СЕТ З КОЛОДИ!</span>`;
+                
+                const newLogs = [logMsg, ...freshData.logs].slice(0, 50);
+                await updateDoc(roomRef, { players, deck: freshData.deck, logs: newLogs });
+            } catch(e) { console.error(e); }
+        };
+
+        window.executeMove = async () => {
+            try {
+                closeModal();
+                const roomRef = getRoomRef(currentRoomId);
+                const snap = await getDoc(roomRef);
+                const freshData = snap.data();
+                const players = freshData.players;
+                
+                const sourceIdx = players.findIndex(p => p.uid === currentUser.uid);
+                const targetIdx = players.findIndex(p => p.uid === selectedTargetUid);
+                const source = players[sourceIdx];
+                const target = players[targetIdx];
+
+                const targetCardIndex = target.hand.findIndex(c => c.symbol === selectedCardSym);
+                let logMsg = "";
+                let nextTurn = freshData.turnIndex;
+                let cardName = selectedCardSym;
+                families.forEach(f => f.members.forEach(m => {if(m.s === selectedCardSym) cardName = m.n}));
+
+                const askLog = `<b>${source.name}</b> питає <b>${cardName}</b> <span style="font-size:10px; opacity:0.7">(${selectedFamily})</span> у <b>${target.name}</b>.`;
+
+                if (targetCardIndex > -1) {
+                    const card = target.hand.splice(targetCardIndex, 1)[0];
+                    source.hand.push(card);
+                    logMsg = `${askLog} <span style="color:#2ecc71; font-weight:bold">ЗАБРАВ!</span>`;
+                    source.hand.sort((a,b) => (a.family > b.family) ? 1 : -1);
+                    if(checkSets(source)) logMsg += ` <span style="color:#f1c40f">ЗІБРАВ СЕТ!</span>`;
+                } else {
+                    logMsg = `${askLog} <span style="color:#e74c3c">НЕМАЄ.</span>`;
+                    if (freshData.deck.length > 0) {
+                        const newCard = freshData.deck.pop();
+                        source.hand.push(newCard);
+                        logMsg += ` Бере з колоди.`;
+                        source.hand.sort((a,b) => (a.family > b.family) ? 1 : -1);
+                        if(checkSets(source)) logMsg += ` <span style="color:#f1c40f">СЕТ З КОЛОДИ!</span>`;
+                    } else {
+                        logMsg += ` (Колода пуста)`;
+                    }
+                    nextTurn = (nextTurn + 1) % players.length;
+                    let attempts = 0;
+                    while(players[nextTurn].hand.length === 0 && freshData.deck.length === 0 && attempts < 5) {
+                        nextTurn = (nextTurn + 1) % players.length;
+                        attempts++;
+                    }
+                }
+
+                let status = 'playing';
+                if (freshData.deck.length === 0 && players.every(p => p.hand.length === 0)) status = 'finished';
+                const newLogs = [logMsg, ...freshData.logs].slice(0, 50);
+
+                await updateDoc(roomRef, { players, deck: freshData.deck, logs: newLogs, turnIndex: nextTurn, status });
+            } catch (e) { alert("Помилка ходу: " + e.message); }
+        };
+
+        function renderGame() {
+            if (gameData.status === 'finished') {
+                document.getElementById('win-screen').style.display = 'flex';
+                const sorted = [...gameData.players].sort((a,b) => b.sets.length - a.sets.length);
+                document.getElementById('winner-name').innerText = `Переміг: ${sorted[0].name}`;
+                document.getElementById('final-stats').innerHTML = sorted.map(p => `<div>${p.name}: ${p.sets.length}</div>`).join('');
+                return;
+            } else { document.getElementById('win-screen').style.display = 'none'; }
+
+            if (gameData.status === 'waiting') {
+                document.getElementById('waiting-area').style.display = 'flex';
+                document.getElementById('active-game-board').style.display = 'none';
+                document.getElementById('player-list').innerHTML = gameData.players.map(p => `<div class="player-tag">👤 ${p.name}</div>`).join('');
+                const startBtn = document.getElementById('start-btn');
+                if (currentUser.uid === gameData.hostId) {
+                    startBtn.style.display = 'block';
+                    startBtn.disabled = gameData.players.length < 2;
+                }
+            } else {
+                document.getElementById('waiting-area').style.display = 'none';
+                document.getElementById('active-game-board').style.display = 'flex'; 
+
+                // OPPONENTS
+                const oppContainer = document.getElementById('opponents');
+                oppContainer.innerHTML = '';
+                const myIndex = gameData.players.findIndex(p => p.uid === currentUser.uid);
+                const others = gameData.players.filter(p => p.uid !== currentUser.uid);
+
+                others.forEach(p => {
+                    const isTurn = gameData.players[gameData.turnIndex].uid === p.uid;
+                    const activeClass = isTurn ? 'active' : '';
+                    let backs = '';
+                    const maxShow = Math.min(p.hand.length, 7);
+                    for(let i=0; i<maxShow; i++) backs += `<div class="mini-card"></div>`;
+                    
+                    let setsHtml = '';
+                    if(p.sets.length > 0) {
+                        setsHtml = `<div class="sets-container">` + 
+                            p.sets.map(s => {
+                                const color = window.getFamilyColor(s);
+                                return `<span class="set-badge" style="background:${color}">${s}</span>`
+                            }).join('') + `</div>`;
+                    }
+                    const setCountDisplay = `<div style="font-size:10px; font-weight:bold; color:#193a6f; margin-top:2px;">Сетів: ${p.sets.length}</div>`;
+
+                    oppContainer.innerHTML += `
+                        <div class="opponent ${activeClass}">
+                            <div style="font-size:24px">👤</div>
+                            <div class="opp-name">${p.name}</div>
+                            <div style="font-size:10px">Карт: ${p.hand.length}</div>
+                            ${setCountDisplay}
+                            <div class="opponent-cards-back">${backs}</div>
+                            ${setsHtml}
+                        </div>`;
+                });
+
+                document.getElementById('deck-count').innerText = gameData.deck.length;
+                const logBox = document.getElementById('game-log');
+                logBox.innerHTML = gameData.logs.map(l => `<div class="log-entry">${l}</div>`).join('');
+                
+                const me = gameData.players[myIndex];
+                const isMyTurn = gameData.turnIndex === myIndex;
+                const statusText = document.getElementById('status-text');
+                statusText.innerText = isMyTurn ? "ВАШ ХІД!" : `Хід: ${gameData.players[gameData.turnIndex].name}`;
+                statusText.style.color = isMyTurn ? "#27ae60" : "#e74c3c";
+                document.getElementById('my-sets-count').innerText = me.sets.length;
+
+                const mySetsContainer = document.getElementById('my-sets-list');
+                if(me.sets.length > 0) {
+                     mySetsContainer.innerHTML = me.sets.map(s => {
+                        const color = window.getFamilyColor(s);
+                        return `<span class="set-badge" style="background:${color}">${s}</span>`;
+                    }).join('');
+                    mySetsContainer.style.display = 'block';
+                } else {
+                    mySetsContainer.style.display = 'none';
+                }
+
+                const handContainer = document.getElementById('my-hand');
+                handContainer.innerHTML = '';
+                if (isMyTurn && me.hand.length === 0 && gameData.deck.length > 0) {
+                    handContainer.innerHTML = `
+                        <div style="width:100%; display:flex; justify-content:center; padding:20px;">
+                            <button class="btn-create" onclick="drawFromDeck()" style="width:auto; padding:15px 30px; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+                                🃏 ВЗЯТИ КАРТУ З КОЛОДИ
+                            </button>
+                        </div>`;
+                } else {
+                    me.hand.forEach(card => {
+                        const others = card.members.filter(m => m.s !== card.symbol).map(o => `<li><b>${o.s}</b> ${o.n}</li>`).join('');
+                        handContainer.innerHTML += `
+                            <div class="card" onclick="onCardClick(this, '${card.family}')" 
+                                style="--accent-color: ${card.color}; --bg-color: ${card.bg}">
+                                <div class="family-header">${card.family}</div>
+                                <div class="block-tag">${card.block}</div>
+                                <div class="family-icon">${card.icon}</div>
+                                <div class="element-box">
+                                    <div class="sym-display">${card.symbol}</div>
+                                    <div class="name-display">${card.name}</div>
+                                </div>
+                                <div class="footer-info">
+                                    <span style="font-weight:900; display:block; border-bottom:1px solid #eee;">ПОТРІБНІ:</span>
+                                    <ul>${others}</ul>
+                                </div>
+                            </div>`;
+                    });
+                }
+            }
+        }
+        
+        window.onCardClick = (el, family) => {
+            if (window.innerWidth <= 600) {
+                if (el.classList.contains('focused')) { openMoveModal(family); } 
+                else {
+                    document.querySelectorAll('.card').forEach(c => c.classList.remove('focused'));
+                    el.classList.add('focused');
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            } else { openMoveModal(family); }
+        };
+    </script>
+</body>
+</html>
