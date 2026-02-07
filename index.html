@@ -19,15 +19,17 @@
         /* --- АДАПТАЦІЯ ПІД ПЛАНШЕТИ ТА НОУТБУКИ --- */
         @media (min-width: 768px) {
             :root {
-                --card-width: 160px;
-                --card-height: 280px;
+                /* Було 160x280 -> Зменшуємо */
+                --card-width: 140px; 
+                --card-height: 240px;
             }
         }
 
         @media (min-width: 1024px) {
             :root {
-                --card-width: 200px;
-                --card-height: 340px;
+                /* Було 200x340 -> Зменшуємо значно */
+                --card-width: 180px; 
+                --card-height: 290px;
             }
         }
 
@@ -67,7 +69,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Збільшення лобі на великих екранах */
         @media (min-width: 1024px) {
             .lobby-box {
                 max-width: 500px;
@@ -179,7 +180,6 @@
         }
 
         /* MIDDLE: DECK & LOGS */
-        /* Виправлено перекриття: додано z-index і кращий розподіл простору */
         #center-area { 
             flex-grow: 1; 
             display: flex; 
@@ -188,15 +188,15 @@
             gap: 20px; 
             padding: 10px; 
             position: relative;
-            min-height: 150px; /* Гарантована висота */
+            min-height: 150px; 
             z-index: 1;
-            flex-shrink: 1; /* Дозволяємо стискатись, але не зникати */
+            flex-shrink: 1; 
         }
 
         @media (min-width: 1024px) {
             #center-area {
                 gap: 50px;
-                min-height: 250px; /* Більше простору на ПК */
+                min-height: 250px; 
             }
         }
         
@@ -230,7 +230,7 @@
             display: flex; 
             flex-direction: column;
             transition: all 0.3s;
-            flex-shrink: 1; /* Дозволяємо зменшувати висоту, якщо мало місця */
+            flex-shrink: 1; 
         }
 
         @media (min-width: 768px) {
@@ -278,17 +278,17 @@
             width: fit-content; max-width: 100%; margin: 0 auto;
         }
 
-        /* ЗМЕНШЕНО висоту контейнера для карток на великих екранах */
+        /* ВИПРАВЛЕННЯ: Зменшено висоту контейнера для великих екранів, щоб карти не обрізались */
         @media (min-width: 768px) {
             #my-hand { 
-                min-height: 310px; /* Було 360px */
+                min-height: 270px; /* Було 310px */
                 padding: 30px 30px 20px 30px; 
                 gap: -20px; 
             }
         }
         @media (min-width: 1024px) {
             #my-hand { 
-                min-height: 380px; /* Було 450px */
+                min-height: 330px; /* Було 380px, карти 290px + паддінг */
                 padding: 40px 40px 30px 40px; 
                 gap: -30px; 
             }
@@ -330,24 +330,24 @@
         @media (min-width: 768px) {
             .sym-display { font-size: 42px; }
             .name-display { font-size: 12px; }
-            .footer-info { font-size: 10px; height: 80px; }
+            .footer-info { font-size: 10px; height: 70px; } /* Зменшив висоту футера для компактності */
             .family-header { font-size: 12px; padding: 4px; }
             .family-icon { width: 20px; top: 35px; }
             .block-tag { font-size: 16px; top: 35px; }
         }
 
-        /* ЗБІЛЬШЕНО шрифт тексту "потрібних елементів" */
+        /* ЗБЕРЕЖЕНО великі шрифти, але скомпоновано щільніше */
         @media (min-width: 1024px) {
-            .sym-display { font-size: 48px; margin-bottom: 5px; } /* Трохи зменшено, щоб дати місце футеру */
+            .sym-display { font-size: 48px; margin-bottom: 5px; } 
             .name-display { font-size: 14px; }
             
-            /* Збільшуємо зону футера та шрифт */
+            /* Зменшено висоту зони футера, але шрифт залишено великим (13px) */
             .footer-info { 
-                font-size: 13px; /* Було 11px */
-                height: 115px; /* Було 95px */
+                font-size: 13px; 
+                height: 95px; /* Було 115px -> стало 95px, щоб влізло в меншу карту */
             }
-            .footer-info span { font-size: 14px; margin-bottom: 5px; }
-            .footer-info ul li { margin-bottom: 4px; }
+            .footer-info span { font-size: 14px; margin-bottom: 3px; }
+            .footer-info ul li { margin-bottom: 3px; }
 
             .family-header { font-size: 14px; padding: 5px; }
             .family-icon { width: 24px; top: 40px; right: 8px; }
