@@ -16,18 +16,17 @@
             --brand-dark: #2c3e50;
         }
 
-        /* --- АДАПТАЦІЯ ПІД ПЛАНШЕТИ ТА НОУТБУКИ --- */
+        /* --- АДАПТАЦІЯ ПІД ПЛАНШЕТИ (від 768px) --- */
         @media (min-width: 768px) {
             :root {
-                /* Було 160x280 -> Зменшуємо */
                 --card-width: 140px; 
                 --card-height: 240px;
             }
         }
 
+        /* --- АДАПТАЦІЯ ПІД НОУТБУКИ/ПК (від 1024px) --- */
         @media (min-width: 1024px) {
             :root {
-                /* Було 200x340 -> Зменшуємо значно */
                 --card-width: 180px; 
                 --card-height: 290px;
             }
@@ -74,11 +73,7 @@
                 max-width: 500px;
                 padding: 50px;
             }
-            .lobby-box input {
-                font-size: 24px;
-                padding: 20px;
-            }
-            .lobby-box button {
+            .lobby-box input, .lobby-box button {
                 font-size: 24px;
                 padding: 20px;
             }
@@ -122,27 +117,22 @@
         }
 
         @media (min-width: 1024px) {
-            .room-badge {
-                font-size: 20px;
-                padding: 10px 20px;
-            }
+            .room-badge { font-size: 20px; padding: 10px 20px; }
         }
         
         #room-code-display { cursor: pointer; text-decoration: underline; }
 
         /* TOP: OPPONENTS */
         #top-bar {
-            flex-shrink: 0; padding: 10px; padding-top: 45px;
+            flex-shrink: 0; /* ЗАБОРОНЯЄМО стискатись */
+            padding: 10px; padding-top: 45px;
             background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex; flex-direction: column; gap: 10px; z-index: 5;
             transition: all 0.3s;
         }
 
         @media (min-width: 1024px) {
-            #top-bar {
-                padding-top: 60px;
-                padding-bottom: 20px;
-            }
+            #top-bar { padding-top: 60px; padding-bottom: 20px; }
         }
 
         #opponents { 
@@ -163,10 +153,7 @@
         .mini-card { width: 8px; height: 12px; background: var(--brand-blue); border-radius: 2px; display: inline-block; margin: 0 1px; }
 
         @media (min-width: 1024px) {
-            .opponent {
-                min-width: 140px;
-                padding: 15px;
-            }
+            .opponent { min-width: 140px; padding: 15px; }
             .opp-name { font-size: 18px; max-width: 130px; }
             .mini-card { width: 12px; height: 18px; margin: 0 2px; }
         }
@@ -181,22 +168,24 @@
 
         /* MIDDLE: DECK & LOGS */
         #center-area { 
-            flex-grow: 1; 
+            flex-grow: 1; /* Займає весь доступний простір між верхом і низом */
             display: flex; 
             align-items: center; 
             justify-content: center; 
             gap: 20px; 
             padding: 10px; 
             position: relative;
-            min-height: 150px; 
+            min-height: 150px; /* Гарантована мінімальна висота */
             z-index: 1;
-            flex-shrink: 1; 
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media (min-width: 1024px) {
             #center-area {
-                gap: 50px;
+                gap: 40px;
                 min-height: 250px; 
+                padding: 0 40px; /* Додаткові відступи з боків */
             }
         }
         
@@ -205,7 +194,7 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
             transition: all 0.3s;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Не дозволяємо колоді стискатись */
         }
 
         @media (min-width: 768px) {
@@ -240,10 +229,14 @@
                 font-size: 14px;
             }
         }
+
+        /* Розтягуємо журнал на ПК */
         @media (min-width: 1024px) {
             #game-log {
-                width: 500px;
-                height: 280px; 
+                width: auto; /* Скидаємо фіксовану ширину */
+                flex-grow: 1; /* Розтягуємо на всю доступну ширину */
+                max-width: 800px; /* Обмеження, щоб не було занадто широко */
+                height: 250px; 
                 font-size: 18px;
             }
             .log-entry { margin-bottom: 8px; padding-bottom: 4px; }
@@ -253,7 +246,8 @@
 
         /* BOTTOM: HAND */
         #player-area { 
-            flex-shrink: 0; background: white; padding: 0 0 10px 0; padding-bottom: env(safe-area-inset-bottom);
+            flex-shrink: 0; /* ЗАБОРОНЯЄМО стискатись нижньому контейнеру */
+            background: white; padding: 0 0 10px 0; padding-bottom: env(safe-area-inset-bottom);
             box-shadow: 0 -5px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10;
         }
 
@@ -273,23 +267,36 @@
         }
 
         #my-hand { 
-            display: flex; overflow-x: auto; padding: 40px 20px 10px 20px; min-height: 290px;
-            align-items: flex-end; gap: -10px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+            display: flex; overflow-x: auto; 
+            padding: 40px 20px 10px 20px; /* Стандарт для мобільних */
+            min-height: 290px;
+            align-items: flex-end; 
+            gap: -10px; 
+            scroll-snap-type: x mandatory; 
+            -webkit-overflow-scrolling: touch;
             width: fit-content; max-width: 100%; margin: 0 auto;
         }
 
-        /* ВИПРАВЛЕННЯ: Зменшено висоту контейнера для великих екранів, щоб карти не обрізались */
         @media (min-width: 768px) {
             #my-hand { 
-                min-height: 270px; /* Було 310px */
-                padding: 30px 30px 20px 30px; 
+                min-height: 300px;
+                padding: 20px 30px 20px 30px; 
                 gap: -20px; 
             }
         }
+
+        /* ОНОВЛЕНО ДЛЯ ДЕСКТОПУ */
         @media (min-width: 1024px) {
             #my-hand { 
-                min-height: 330px; /* Було 380px, карти 290px + паддінг */
-                padding: 40px 40px 30px 40px; 
+                /* 1) Зменшено верхній відступ (було 40px) */
+                padding-top: 10px; 
+                padding-bottom: 30px;
+                padding-left: 40px;
+                padding-right: 40px;
+                
+                /* 2) Збільшено висоту контейнера (карти ~290px, + відступи = ~360px) */
+                min-height: 360px; 
+                
                 gap: -30px; 
             }
         }
@@ -330,21 +337,19 @@
         @media (min-width: 768px) {
             .sym-display { font-size: 42px; }
             .name-display { font-size: 12px; }
-            .footer-info { font-size: 10px; height: 70px; } /* Зменшив висоту футера для компактності */
+            .footer-info { font-size: 10px; height: 70px; }
             .family-header { font-size: 12px; padding: 4px; }
             .family-icon { width: 20px; top: 35px; }
             .block-tag { font-size: 16px; top: 35px; }
         }
 
-        /* ЗБЕРЕЖЕНО великі шрифти, але скомпоновано щільніше */
         @media (min-width: 1024px) {
             .sym-display { font-size: 48px; margin-bottom: 5px; } 
             .name-display { font-size: 14px; }
             
-            /* Зменшено висоту зони футера, але шрифт залишено великим (13px) */
             .footer-info { 
                 font-size: 13px; 
-                height: 95px; /* Було 115px -> стало 95px, щоб влізло в меншу карту */
+                height: 95px; 
             }
             .footer-info span { font-size: 14px; margin-bottom: 3px; }
             .footer-info ul li { margin-bottom: 3px; }
