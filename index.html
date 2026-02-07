@@ -139,7 +139,7 @@
 
         @media (min-width: 1024px) {
             #top-bar {
-                padding-top: 60px; /* Більше місця під бейдж */
+                padding-top: 60px;
                 padding-bottom: 20px;
             }
         }
@@ -147,7 +147,7 @@
         #opponents { 
             display: flex; gap: 10px; overflow-x: auto; padding: 5px 0;
             scrollbar-width: none;
-            justify-content: center; /* Центрування опонентів на великих екранах */
+            justify-content: center;
         }
         #opponents::-webkit-scrollbar { display: none; }
 
@@ -179,6 +179,7 @@
         }
 
         /* MIDDLE: DECK & LOGS */
+        /* Виправлено перекриття: додано z-index і кращий розподіл простору */
         #center-area { 
             flex-grow: 1; 
             display: flex; 
@@ -187,13 +188,15 @@
             gap: 20px; 
             padding: 10px; 
             position: relative;
-            /* На ПК дозволяємо зайняти більше місця */
-            min-height: 0; 
+            min-height: 150px; /* Гарантована висота */
+            z-index: 1;
+            flex-shrink: 1; /* Дозволяємо стискатись, але не зникати */
         }
 
         @media (min-width: 1024px) {
             #center-area {
-                gap: 50px; /* Більший відступ між колодою і логом */
+                gap: 50px;
+                min-height: 250px; /* Більше простору на ПК */
             }
         }
         
@@ -202,6 +205,7 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
             transition: all 0.3s;
+            flex-shrink: 0;
         }
 
         @media (min-width: 768px) {
@@ -226,21 +230,21 @@
             display: flex; 
             flex-direction: column;
             transition: all 0.3s;
+            flex-shrink: 1; /* Дозволяємо зменшувати висоту, якщо мало місця */
         }
 
-        /* Розтягуємо журнал на великих екранах */
         @media (min-width: 768px) {
             #game-log {
                 width: 350px;
-                height: 200px;
+                height: 180px;
                 font-size: 14px;
             }
         }
         @media (min-width: 1024px) {
             #game-log {
                 width: 500px;
-                height: 300px; /* Більша висота */
-                font-size: 18px; /* Більший шрифт */
+                height: 280px; 
+                font-size: 18px;
             }
             .log-entry { margin-bottom: 8px; padding-bottom: 4px; }
         }
@@ -274,11 +278,20 @@
             width: fit-content; max-width: 100%; margin: 0 auto;
         }
 
+        /* ЗМЕНШЕНО висоту контейнера для карток на великих екранах */
         @media (min-width: 768px) {
-            #my-hand { min-height: 360px; padding: 50px 30px 20px 30px; gap: -20px; }
+            #my-hand { 
+                min-height: 310px; /* Було 360px */
+                padding: 30px 30px 20px 30px; 
+                gap: -20px; 
+            }
         }
         @media (min-width: 1024px) {
-            #my-hand { min-height: 450px; padding: 60px 40px 30px 40px; gap: -30px; }
+            #my-hand { 
+                min-height: 380px; /* Було 450px */
+                padding: 40px 40px 30px 40px; 
+                gap: -30px; 
+            }
         }
         
         /* CARDS */
@@ -291,7 +304,6 @@
         }
         .card:last-child { margin-right: 20px; }
 
-        /* Mobile specific Card behavior */
         @media (max-width: 600px) {
             #my-hand { min-height: 230px; padding-top: 35px; }
             .card.focused { transform: translateY(-30px) scale(1.1); z-index: 100; margin-right: 10px; margin-left: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
@@ -300,7 +312,6 @@
             .name-display { font-size: 10px; }
         }
 
-        /* Desktop/Tablet specific hover & Fonts inside Card */
         @media (min-width: 601px) {
             .card:hover { transform: translateY(-30px); z-index: 100; margin-right: 0; }
         }
@@ -325,11 +336,19 @@
             .block-tag { font-size: 16px; top: 35px; }
         }
 
+        /* ЗБІЛЬШЕНО шрифт тексту "потрібних елементів" */
         @media (min-width: 1024px) {
-            .sym-display { font-size: 56px; margin-bottom: 5px; }
+            .sym-display { font-size: 48px; margin-bottom: 5px; } /* Трохи зменшено, щоб дати місце футеру */
             .name-display { font-size: 14px; }
-            .footer-info { font-size: 11px; height: 95px; }
-            .footer-info ul li { margin-bottom: 3px; }
+            
+            /* Збільшуємо зону футера та шрифт */
+            .footer-info { 
+                font-size: 13px; /* Було 11px */
+                height: 115px; /* Було 95px */
+            }
+            .footer-info span { font-size: 14px; margin-bottom: 5px; }
+            .footer-info ul li { margin-bottom: 4px; }
+
             .family-header { font-size: 14px; padding: 5px; }
             .family-icon { width: 24px; top: 40px; right: 8px; }
             .block-tag { font-size: 18px; top: 40px; left: 8px; }
