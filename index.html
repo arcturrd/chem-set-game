@@ -535,6 +535,20 @@
             box-shadow: 0 5px 15px rgba(25, 58, 111, 0.3);
         }
 
+        /* --- STYLES FOR TOURNAMENT TABLE --- */
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .stats-table th { 
+            text-align: left; padding: 8px; 
+            border-bottom: 2px solid var(--brand-blue); 
+            color: var(--brand-blue); 
+            font-family: 'Oswald'; font-size: var(--font-sm); letter-spacing: 1px;
+        }
+        .stats-table td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .stats-table tr:last-child td { border-bottom: none; }
+        .stats-table .player-name { font-weight: bold; color: var(--brand-dark); }
+        .stats-table .set-count { font-weight: bold; text-align: center; color: var(--brand-accent); font-size: calc(var(--font-md)*1.2); }
+        .stats-table .set-list { font-size: var(--font-sm); color: #666; line-height: 1.2; }
+
     </style>
 </head>
 <body>
@@ -610,7 +624,7 @@
             <h1 style="font-family:'Oswald'; color:#f1c40f; font-size: var(--font-lg); margin-top:0;">ПЕРЕМОГА!</h1>
             <h2 id="winner-name" style="color:#333; font-size: calc(var(--font-md)*1.5);"></h2>
             <div id="final-stats" style="text-align:left; margin:20px 0; font-size: var(--font-md); background: #f9f9f9; padding: 15px; border-radius: 10px;"></div>
-            <button onclick="leaveRoom()" class="btn-join">В меню</button>
+            <button onclick="leaveRoom()" class="btn-join">НОВА ГРА</button>
         </div>
     </div>
 
@@ -1110,7 +1124,40 @@
                 document.getElementById('win-screen').style.display = 'flex';
                 const sorted = [...gameData.players].sort((a,b) => b.sets.length - a.sets.length);
                 document.getElementById('winner-name').innerText = `Переміг: ${sorted[0].name}`;
-                document.getElementById('final-stats').innerHTML = sorted.map(p => `<div>${p.name}: ${p.sets.length}</div>`).join('');
+                
+                // Турнірна таблиця
+                let tableHTML = `
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th width="35%">ГРАВЕЦЬ</th>
+                                <th width="15%" style="text-align:center">СЕТІВ</th>
+                                <th width="50%">ЗІБРАНІ СЕТИ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                sorted.forEach(p => {
+                    const setsStr = p.sets.length > 0 ? p.sets.join(', ') : '—';
+                    tableHTML += `
+                        <tr>
+                            <td class="player-name">${p.name}</td>
+                            <td class="set-count">${p.sets.length}</td>
+                            <td class="set-list">${setsStr}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += `</tbody></table>`;
+                document.getElementById('final-stats').innerHTML = tableHTML;
+                
+                // Зміна тексту кнопки
+                const winBtn = document.querySelector('#win-screen button');
+                if(winBtn) {
+                    winBtn.innerText = "НОВА ГРА";
+                    // leaveRoom() вже перезавантажує сторінку, що веде до старту
+                }
                 return;
             } else { document.getElementById('win-screen').style.display = 'none'; }
 
