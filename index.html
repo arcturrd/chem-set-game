@@ -922,19 +922,39 @@
             desc.innerText = "1. У кого запитати?";
             grid.innerHTML = '';
             gameData.players.forEach(p => {
-                if(p.uid !== currentUser.uid && p.hand.length > 0) {
-                    grid.innerHTML += `<div class="select-item" onclick="selectTarget('${p.uid}', this)">${p.name} (${p.hand.length})</div>`;
+                if(p.uid !== currentUser.uid) { // Прибрано перевірку p.hand.length > 0
+                    const countText = p.hand.length > 0 ? `(${p.hand.length})` : `(0)`;
+                    const style = p.hand.length === 0 ? 'opacity:0.6;' : ''; 
+                    grid.innerHTML += `<div class="select-item" style="${style}" onclick="selectTarget('${p.uid}', this)">${p.name} ${countText}</div>`;
                 }
             });
             btn.disabled = true;
-            btn.onclick = () => setupStep2();
+            btn.innerText = "Далі"; // Reset button text
+            // btn.onclick will be set in selectTarget
         };
 
         window.selectTarget = (uid, el) => {
             selectedTargetUid = uid;
             document.querySelectorAll('.select-item').forEach(i => i.classList.remove('selected'));
             el.classList.add('selected');
-            document.getElementById('modal-confirm').disabled = false;
+            
+            // Перевірка карт у цілі
+            const targetP = gameData.players.find(p => p.uid === uid);
+            const btn = document.getElementById('modal-confirm');
+            
+            btn.disabled = false;
+            
+            if (targetP.hand.length === 0) {
+                // У цілі немає карт -> Кнопка "Взяти з колоди"
+                btn.innerText = "Взяти з колоди";
+                btn.onclick = () => forcedDrawLogic();
+                document.getElementById('modal-desc').innerText = "У гравця немає карт. Взяти з колоди?";
+            } else {
+                // Звичайний режим
+                btn.innerText = "Далі";
+                btn.onclick = () => setupStep2();
+                document.getElementById('modal-desc').innerText = "1. У кого запитати?";
+            }
         };
 
         window.setupStep2 = () => {
@@ -963,6 +983,50 @@
         };
 
         window.closeModal = () => { document.getElementById('action-modal').classList.remove('active'); };
+        
+        // Нова функція для примусового взяття карти (коли у цілі 0 карт)
+        window.forcedDrawLogic = async () => {
+            try {
+                closeModal();
+                const roomRef = getRoomRef(currentRoomId);
+                const snap = await getDoc(roomRef);
+                const freshData = snap.data();
+                const players = freshData.players;
+                
+                const sourceIdx = players.findIndex(p => p.uid === currentUser.uid);
+                const targetIdx = players.findIndex(p => p.uid === selectedTargetUid);
+                const source = players[sourceIdx];
+                const target = players[targetIdx];
+
+                let logMsg = `<b>${source.name}</b> хотів запитати у <b>${target.name}</b>, але у того немає карт.`;
+                let nextTurn = freshData.turnIndex;
+
+                if (freshData.deck.length > 0) {
+                    const newCard = freshData.deck.pop();
+                    source.hand.push(newCard);
+                    logMsg += ` Бере з колоди.`;
+                    source.hand.sort((a,b) => (a.family > b.family) ? 1 : -1);
+                    if(checkSets(source)) logMsg += ` <span style="color:#f1c40f">СЕТ З КОЛОДИ!</span>`;
+                } else {
+                    logMsg += ` (Колода пуста)`;
+                }
+                
+                // Перехід ходу (так само як при невдалому запиті)
+                nextTurn = (nextTurn + 1) % players.length;
+                let attempts = 0;
+                while(players[nextTurn].hand.length === 0 && freshData.deck.length === 0 && attempts < 5) {
+                    nextTurn = (nextTurn + 1) % players.length;
+                    attempts++;
+                }
+
+                let status = 'playing';
+                if (freshData.deck.length === 0 && players.every(p => p.hand.length === 0)) status = 'finished';
+                const newLogs = [logMsg, ...freshData.logs].slice(0, 50);
+
+                await updateDoc(roomRef, { players, deck: freshData.deck, logs: newLogs, turnIndex: nextTurn, status });
+
+            } catch (e) { alert("Помилка: " + e.message); }
+        };
 
         window.drawFromDeck = async () => {
             try {
